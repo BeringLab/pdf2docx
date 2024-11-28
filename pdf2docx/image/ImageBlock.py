@@ -6,6 +6,8 @@
 '''
 
 from io import BytesIO
+from PIL import Image as PILImage
+import pytesseract
 from ..text.Line import Line
 from ..text.TextBlock import TextBlock
 from .Image import Image
@@ -13,6 +15,9 @@ from .ImageSpan import ImageSpan
 from ..common.Block import Block
 from ..common.docx import add_float_image
 
+
+# IMAGE_TEXT_CHECK_THRESHOLD = 10
+# image_text_check_cnt = 0
 
 class ImageBlock(Image, Block):
     '''Image block.'''
@@ -22,6 +27,20 @@ class ImageBlock(Image, Block):
         # inline image type by default
         self.set_inline_image_block()
 
+        # Check if the image contains text
+        self.has_text = self.contains_text()
+
+
+    def contains_text(self):
+        """Check if the image contains text using OCR."""
+        # Convert the image bytes to a PIL image
+        image = PILImage.open(BytesIO(self.image))
+        
+        # Use pytesseract to extract text from the image
+        text = pytesseract.image_to_string(image, lang='eng+kor')
+        print(text)
+        # Check if any text was found
+        return bool(text.strip())
 
     def to_text_block(self):
         """Convert image block to a span under text block.
