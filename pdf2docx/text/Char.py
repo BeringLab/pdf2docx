@@ -24,6 +24,7 @@ class Char(Element):
 
         # Note to filter control character avoiding error when making docx, #126
         c = raw.get('c', '')
+        c = c.replace("\x02", " ")
         if c in INVALID_CHARS: c = ''
         self.c = c
         self.origin = raw.get('origin', None)

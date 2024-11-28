@@ -74,7 +74,6 @@ class Blocks(ElementCollection):
         return list(filter(
             lambda block: isinstance(block, Block) and block.is_text_image_block, self._instances))
 
-
     def restore(self, raws:list):
         '''Clean current instances and restore them from source dict.
         ImageBlock is converted to ImageSpan contained in TextBlock.
@@ -107,6 +106,7 @@ class Blocks(ElementCollection):
             # add to list
             self.append(block)
         
+
         return self
 
 
@@ -391,15 +391,19 @@ class Blocks(ElementCollection):
         # group lines by overlap
         fun = lambda a, b: a.get_main_bbox(b, threshold=line_overlap_threshold)
         groups = self.group(fun)
-        
+        ignore_overlap_cnt = 0
         # delete overlapped lines
         for group in filter(lambda group: len(group)>1, groups):
             # keep only the line with largest area
             sorted_lines = sorted(group, key=lambda line: line.bbox.get_area())
             for line in sorted_lines[:-1]:
                 logging.warning('Ignore Line "%s" due to overlap', line.text)
+                ignore_overlap_cnt += 1
+            
                 line.update_bbox((0,0,0,0))
-
+                if ignore_overlap_cnt > 5:
+                    raise ValueError("Overlap lines are more than 5. Please check your file.")
+                
         return self
 
 

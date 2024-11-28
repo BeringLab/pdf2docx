@@ -3,11 +3,11 @@
 '''Collection of :py:class:`~pdf2docx.page.Page` instances.'''
 
 import logging
-
+import os
 from .RawPageFactory import RawPageFactory
 from ..common.Collection import BaseCollection
 from ..font.Fonts import Fonts
-
+from ..layout.Blocks import ImageBlock
 
 class Pages(BaseCollection):
     '''A collection of ``Page``.'''
@@ -29,12 +29,20 @@ class Pages(BaseCollection):
         # ---------------------------------------------
         pages, raw_pages = [], []
         words_found = False
+        image_text_check_cnt = 0
+        # 1.1 extract and then clean up raw page
         for page in self:
             if page.skip_parsing: continue
 
             # init and extract data from PDF
             raw_page = RawPageFactory.create(page_engine=fitz_doc[page.id], backend='PyMuPDF')
             raw_page.restore(**settings)
+
+            for block in raw_page.blocks:
+                if isinstance(block, ImageBlock) and block.has_text:
+                    image_text_check_cnt += 1
+                    if image_text_check_cnt > os.getenv("IMAGE_TEXT_CHECK_THRESHOLD", 10):
+                        raise ValueError("Image contains text and requires OCR processing.")
 
             # check if any words are extracted since scanned pdf may be directed
             if not words_found and raw_page.raw_text.strip():
